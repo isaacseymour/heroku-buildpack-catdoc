@@ -8,7 +8,8 @@ CACHE_DIR=$2
 VENDOR_URL="http://ftp.wagner.pp.ru/pub/catdoc/"
 
 # catdoc
-VERSION="0.94.2"
+VERSION="0.95"
+SHA1_SUM="58afc3f64d43c13d07070103b36cd83b81c94616"
 FILE_NAME="catdoc-${VERSION}"
 ARCHIVE_NAME="${FILE_NAME}.tar.gz"
 BUILDPACK_PACKAGE="${VENDOR_URL}/${ARCHIVE_NAME}"
@@ -19,13 +20,22 @@ if ! [ -e $CACHE_DIR/$FILE_NAME ]; then
   curl $BUILDPACK_PACKAGE -s -o $CACHE_DIR/$ARCHIVE_NAME
 fi
 
+echo "-----> Checking SHA1 sum"
+shasum -a 1 -c <(echo "$SHA1_SUM  $CACHE_DIR/$ARCHIVE_NAME")
+if [ $? -ne 0 ]; then
+  echo "-----> SHA1 sum did not match!"
+  exit 1
+fi
+
 echo "-----> Extracting catdoc source"
 tar zxf $CACHE_DIR/$ARCHIVE_NAME
 
 echo "-----> Compiling catdoc"
 cd $FILE_NAME
 ./configure --prefix=$BUILD_DIR
+mv INSTALL INSTALL.txt
 make
+make -C charsets install-dirs
 make install
 
 echo "-----> Adding catdoc config"
